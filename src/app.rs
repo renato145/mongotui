@@ -1,16 +1,20 @@
-use color_eyre::eyre::Result;
-use crossterm::event::KeyEvent;
-use ratatui::{prelude::Rect, text::Line, widgets::Paragraph};
-use serde::{Deserialize, Serialize};
-use tokio::sync::mpsc;
-
 use crate::{
     action::Action,
-    components::{fps::FpsCounter, home::Home, Component},
+    components::{fps::FpsCounter, home::Home, status_bar::StatusBar, Component},
     config::Config,
     mode::Mode,
-    tui,
+    tui::{self, Tui},
 };
+use color_eyre::eyre::Result;
+use crossterm::event::KeyEvent;
+use ratatui::{
+    layout::{Constraint, Layout},
+    prelude::Rect,
+    text::Line,
+    widgets::Paragraph,
+};
+use serde::{Deserialize, Serialize};
+use tokio::sync::mpsc;
 
 pub struct App {
     pub config: Config,
@@ -27,18 +31,40 @@ impl App {
     pub fn new(tick_rate: f64, frame_rate: f64) -> Result<Self> {
         let home = Home::new();
         let fps = FpsCounter::default();
+        let status_bar = StatusBar::new();
         let config = Config::new()?;
         let mode = Mode::Home;
         Ok(Self {
             tick_rate,
             frame_rate,
-            components: vec![Box::new(home), Box::new(fps)],
+            components: vec![Box::new(home), Box::new(fps), Box::new(status_bar)],
             should_quit: false,
             should_suspend: false,
             config,
             mode,
             last_tick_key_events: Vec::new(),
         })
+    }
+
+    pub fn draw(&mut self, tui: &mut Tui, action_tx: &mpsc::UnboundedSender<Action>) -> Result<()> {
+        tui.draw(|f| {
+            let rects = Layout::default()
+                .constraints([
+                    Constraint::Percentage(100),
+                    Constraint::Min(1),
+                    Constraint::Min(1),
+                ])
+                .split(f.size());
+            for (i, component) in self.components.iter_mut().enumerate() {
+                let r = component.draw(f, rects[i]);
+                if let Err(e) = r {
+                    action_tx
+                        .send(Action::Error(format!("Failed to draw: {:?}", e)))
+                        .unwrap();
+                }
+            }
+        })?;
+        Ok(())
     }
 
     pub async fn run(&mut self) -> Result<()> {
@@ -109,28 +135,10 @@ impl App {
                     Action::Resume => self.should_suspend = false,
                     Action::Resize(w, h) => {
                         tui.resize(Rect::new(0, 0, w, h))?;
-                        tui.draw(|f| {
-                            for component in self.components.iter_mut() {
-                                let r = component.draw(f, f.size());
-                                if let Err(e) = r {
-                                    action_tx
-                                        .send(Action::Error(format!("Failed to draw: {:?}", e)))
-                                        .unwrap();
-                                }
-                            }
-                        })?;
+                        self.draw(&mut tui, &action_tx)?;
                     }
                     Action::Render => {
-                        tui.draw(|f| {
-                            for component in self.components.iter_mut() {
-                                let r = component.draw(f, f.size());
-                                if let Err(e) = r {
-                                    action_tx
-                                        .send(Action::Error(format!("Failed to draw: {:?}", e)))
-                                        .unwrap();
-                                }
-                            }
-                        })?;
+                        self.draw(&mut tui, &action_tx)?;
                     }
                     _ => {}
                 }

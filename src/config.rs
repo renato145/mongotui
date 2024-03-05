@@ -1,5 +1,4 @@
-use std::{collections::HashMap, fmt, path::PathBuf};
-
+use crate::{action::Action, mode::Mode};
 use color_eyre::eyre::Result;
 use config::Value;
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
@@ -10,8 +9,7 @@ use serde::{
     Deserialize, Serialize,
 };
 use serde_json::Value as JsonValue;
-
-use crate::{action::Action, mode::Mode};
+use std::{collections::HashMap, fmt, path::PathBuf};
 
 const CONFIG: &str = include_str!("config.json5");
 
@@ -79,7 +77,7 @@ impl Config {
             for (style_key, style) in default_styles.iter() {
                 user_styles
                     .entry(style_key.clone())
-                    .or_insert_with(|| style.clone());
+                    .or_insert_with(|| *style);
             }
         }
 
@@ -214,7 +212,7 @@ pub fn key_event_to_string(key_event: &KeyEvent) -> String {
             char = format!("f({c})");
             &char
         }
-        KeyCode::Char(c) if c == ' ' => "space",
+        KeyCode::Char(' ') => "space",
         KeyCode::Char(c) => {
             char = c.to_string();
             &char
@@ -455,7 +453,7 @@ mod tests {
     #[test]
     fn test_parse_color_rgb() {
         let color = parse_color("rgb123");
-        let expected = 16 + 1 * 36 + 2 * 6 + 3;
+        let expected = 16 + 36 + 2 * 6 + 3;
         assert_eq!(color, Some(Color::Indexed(expected)));
     }
 

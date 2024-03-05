@@ -1,17 +1,14 @@
-use std::time::Instant;
-
-use color_eyre::{eyre::Result, owo_colors::OwoColorize};
-use ratatui::{prelude::*, widgets::*};
-
 use super::Component;
 use crate::{action::Action, tui::Frame};
+use color_eyre::{eyre::Result, owo_colors::OwoColorize};
+use ratatui::{prelude::*, widgets::*};
+use std::time::Instant;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct FpsCounter {
     app_start_time: Instant,
     app_frames: u32,
     app_fps: f64,
-
     render_start_time: Instant,
     render_frames: u32,
     render_fps: f64,
@@ -87,7 +84,6 @@ impl Component for FpsCounter {
             self.app_fps, self.render_fps
         );
         let block = Block::default().title(block::Title::from(s.dim()).alignment(Alignment::Right));
-        let block = Paragraph::new("Hi (:".red());
         f.render_widget(block, rect);
         Ok(())
     }

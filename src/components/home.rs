@@ -1,16 +1,20 @@
-use std::{collections::HashMap, time::Duration};
-
-use color_eyre::eyre::Result;
-use crossterm::event::{KeyCode, KeyEvent};
-use ratatui::{prelude::*, widgets::*};
-use serde::{Deserialize, Serialize};
-use tokio::sync::mpsc::UnboundedSender;
-
 use super::{Component, Frame};
 use crate::{
     action::Action,
     config::{Config, KeyBindings},
 };
+use color_eyre::eyre::Result;
+use crossterm::event::{KeyCode, KeyEvent};
+use ratatui::{
+    prelude::*,
+    widgets::{
+        block::{Position, Title},
+        *,
+    },
+};
+use serde::{Deserialize, Serialize};
+use std::{collections::HashMap, time::Duration};
+use tokio::sync::mpsc::UnboundedSender;
 
 #[derive(Default)]
 pub struct Home {
@@ -44,7 +48,9 @@ impl Component for Home {
     }
 
     fn draw(&mut self, f: &mut Frame<'_>, area: Rect) -> Result<()> {
-        f.render_widget(Paragraph::new("hello there"), area);
+        let widget = Paragraph::new("Hello there")
+            .block(Block::default().title("Mongo TUI").borders(Borders::ALL));
+        f.render_widget(widget, area);
         Ok(())
     }
 }

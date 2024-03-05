@@ -1,8 +1,3 @@
-use std::{
-    ops::{Deref, DerefMut},
-    time::Duration,
-};
-
 use color_eyre::eyre::Result;
 use crossterm::{
     cursor,
@@ -15,6 +10,10 @@ use crossterm::{
 use futures::{FutureExt, StreamExt};
 use ratatui::backend::CrosstermBackend as Backend;
 use serde::{Deserialize, Serialize};
+use std::{
+    ops::{Deref, DerefMut},
+    time::Duration,
+};
 use tokio::{
     sync::mpsc::{self, UnboundedReceiver, UnboundedSender},
     task::JoinHandle,
